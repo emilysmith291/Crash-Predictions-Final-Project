@@ -4,7 +4,10 @@ import { AlertCircle, ChevronDown, Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { NumberField, SelectField } from "@/components/fields";
-import { ResultSummary, WhatIfList, type WhatIfRow } from "@/components/result";
+import { motion, useReducedMotion } from "motion/react";
+
+import { ResultSummary, WhatIfChart, type WhatIfRow } from "@/components/result";
+import { DrivingLoader, RoadScene } from "@/components/road";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { API_URL, ApiError, getOptions, predict, type CrashInput, type Options, type Prediction } from "@/lib/api";
@@ -144,17 +147,28 @@ export default function Home() {
 
   const disabled = !options;
 
+  // Sections rise in gently on first load (skipped when reduced motion is on).
+  const reduceMotion = useReducedMotion();
+  const fadeIn = (delay: number) => reduceMotion ? {} : {
+    initial: { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] as const },
+  };
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
-      <header className="max-w-3xl">
-        <p className="text-sm font-medium text-primary">DTSC 3602 · Group 3</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Crash Severity Estimator</h1>
-        <p className="mt-3 text-base text-muted-foreground">
-          Describe a vehicle in a crash and see the estimated chance that someone in it is killed or
-          seriously injured. The model learned from about 353,000 vehicles in police-reported crashes
-          (NHTSA CRSS, 2020–2024).
-        </p>
-      </header>
+      <motion.header {...fadeIn(0)}>
+        <div className="max-w-3xl">
+          <p className="text-sm font-medium text-primary">DTSC 3602 · Group 3</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Crash Severity Estimator</h1>
+          <p className="mt-3 text-base text-muted-foreground">
+            Describe a vehicle in a crash and see the estimated chance that someone in it is killed or
+            seriously injured. The model learned from about 353,000 vehicles in police-reported crashes
+            (NHTSA CRSS, 2020–2024).
+          </p>
+        </div>
+        <RoadScene className="mt-6" />
+      </motion.header>
 
       {/* Options loading / error ------------------------------------------------ */}
       {optionsLoading && optionsSlow && (
@@ -173,7 +187,7 @@ export default function Home() {
       )}
 
       {/* Presets ------------------------------------------------------------------ */}
-      <section aria-label="Example scenarios" className="mt-8">
+      <motion.section aria-label="Example scenarios" className="mt-8" {...fadeIn(0.1)}>
         <p className="text-sm font-medium">Try an example</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {PRESETS.map((p) => (
@@ -182,9 +196,9 @@ export default function Home() {
             </Button>
           ))}
         </div>
-      </section>
+      </motion.section>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+      <motion.div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start" {...fadeIn(0.2)}>
         {/* Form ------------------------------------------------------------------ */}
         <form
           className="rounded-xl border border-border bg-card p-5 sm:p-6"
@@ -296,17 +310,9 @@ export default function Home() {
           )}
 
           {status === "loading" && (
-            <div role="status" className="flex flex-col gap-4">
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-12 w-28" />
-              <Skeleton className="h-4 w-64" />
-              <Skeleton className="h-2.5 w-full" />
-              {predictSlow && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" /> Waking up the model. This can take up to 30 seconds.
-                </p>
-              )}
-            </div>
+            <DrivingLoader label={predictSlow
+              ? "Waking up the model. This can take up to 30 seconds."
+              : "Running the numbers…"} />
           )}
 
           {status === "error" && error && (
@@ -335,12 +341,12 @@ export default function Home() {
                   You changed the inputs. Choose Estimate risk to update.
                 </p>
               )}
-              <ResultSummary probability={result.severe_probability} baseRate={result.base_rate} />
-              <WhatIfList rows={whatIfRows} base={result.severe_probability} loading={whatIfLoading} />
+              <ResultSummary key={submitted} probability={result.severe_probability} baseRate={result.base_rate} />
+              <WhatIfChart key={`w-${submitted}`} rows={whatIfRows} base={result.severe_probability} loading={whatIfLoading} />
             </div>
           )}
         </section>
-      </div>
+      </motion.div>
 
       <footer className="mt-12 border-t border-border pt-6 text-xs text-muted-foreground">
         <p>

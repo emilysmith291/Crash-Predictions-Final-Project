@@ -69,3 +69,27 @@
     @apply font-sans;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Road animations (header scene + loading car). All of them stop for visitors
+   who ask their device for reduced motion.
+   -------------------------------------------------------------------------- */
+@keyframes drive-right { from { left: -18%; } to { left: 108%; } }
+@keyframes drive-left  { from { left: 108%; } to { left: -18%; } }
+@keyframes lane-scroll { from { background-position-x: 0; } to { background-position-x: -64px; } }
+@keyframes wheel-spin  { to { transform: rotate(360deg); } }
+@keyframes bob         { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+
+.anim-drive-right { animation: drive-right linear infinite; }
+.anim-drive-left  { animation: drive-left linear infinite; }
+.anim-lane        { animation: lane-scroll 0.6s linear infinite; }
+.anim-wheel       { animation: wheel-spin 0.5s linear infinite; transform-box: fill-box; transform-origin: center; }
+.anim-bob         { animation: bob 0.35s ease-in-out infinite; }
+
+.lane-dashes {
+  background-image: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.75) 0 32px, transparent 32px 64px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-drive-right, .anim-drive-left, .anim-lane, .anim-wheel, .anim-bob { animation: none !important; }
+}
